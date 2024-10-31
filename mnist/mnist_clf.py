@@ -69,9 +69,6 @@ if __name__ == "__main__":
     batch_size = 64
     n_epochs = 100
 
-    patience = 5
-    min_delta = 0.001
-
     ## Data loaders
     data_dir = "/mnt/d/datasets/mnist_11M/"
     train_loader, test_loader = get_loaders(data_dir, batch_size=batch_size,
@@ -83,9 +80,12 @@ if __name__ == "__main__":
     loss_fn = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     metrics = {"acc": accuracy}
+    
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.9)
+    early_stopper = EarlyStopping(patience=5, min_delta=0.001)
 
     clf = Trainer(model, optimizer, loss_fn, metrics)
     clf.fit(train_loader, n_epochs, valid_loader=test_loader,
-            stopper=EarlyStopping(patience=patience, min_delta=min_delta))
+            stopper=early_stopper, scheduler=scheduler)
     res = clf.evaluate(test_loader)
 
