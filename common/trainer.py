@@ -77,7 +77,8 @@ class Trainer:
             self.metrics.update(metrics)
 
         self.device = next(model.parameters()).device
-        self.kwargs = dict(file=sys.stdout, leave=False, ascii=True, unit=" batch", ncols=120)
+        self.kwargs = dict(file=sys.stdout, leave=False,
+                           ascii=True, unit=" batch", ncols=120)
 
     def train_step(self, x, y):
         x, y = x.to(self.device), y.to(self.device)
@@ -94,7 +95,8 @@ class Trainer:
         pred = self.model(x)
         return {name: func(pred, y).item() for name, func in self.metrics.items()}
 
-    def fit(self, train_loader, n_epochs, valid_loader=None, stopper=None, scheduler=None):
+    def fit(self, train_loader, n_epochs,
+            valid_loader=None, stopper=None, scheduler=None):
         history = {name: [] for name in self.metrics}
         if valid_loader is not None:
             history.update({f"val_{name}": [] for name in self.metrics})
@@ -175,7 +177,53 @@ class Trainer:
         self.model.eval()
         x = x.to(self.device)
         return self.model(x)
-        
+
+
+class AETrainer(Trainer):
+    def train_step(self, x, y):
+        x = x.to(self.device)
+        self.optimizer.zero_grad()
+        x_pred = self.model(x)
+        loss = self.loss_fn(x_pred, x)
+        loss.backward()
+        self.optimizer.step()
+        return {name: func(x_pred, x).item() for name, func in self.metrics.items()}
+
+    @torch.no_grad()
+    def test_step(self, x, y):
+        x = x.to(self.device)
+        x_pred = self.model(x)
+        return {name: func(x_pred, x).item() for name, func in self.metrics.items()}
+
+
+class VAETrainer(Trainer):
+    def train_step(self, x, y):
+        x = x.to(self.device)
+        self.optimizer.zero_grad()
+        x_pred, mu, logvar = self.model(x)
+        loss = self.loss_fn(x_pred, x, mu, logvar)
+        loss.backward()
+        self.optimizer.step()
+
+        res = {"loss": loss.item()}
+        for name, func in self.metrics.items():
+            if name != "loss":
+                res[name] = func(x_pred, x).item()
+        return res
+
+    @torch.no_grad()
+    def test_step(self, x, y):
+        x = x.to(self.device)
+        x_pred, mu, logvar = self.model(x)
+        loss = self.loss_fn(x_pred, x, mu, logvar)
+
+        res = {"loss": loss.item()}
+        for name, func in self.metrics.items():
+            if name != "loss":
+                res[name] = func(x_pred, x).item()
+        return res
+
+
 if __name__ == "__main__":
 
     pass

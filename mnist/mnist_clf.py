@@ -70,7 +70,9 @@ if __name__ == "__main__":
     n_epochs = 100
 
     ## Data loaders
-    data_dir = "/mnt/d/datasets/mnist_11M/"
+    # data_dir = "/mnt/d/datasets/mnist_11M/"
+    data_dir = "/mnt/d/datasets/fashion_mnist_29M/"
+    
     train_loader, test_loader = get_loaders(data_dir, batch_size=batch_size,
                                             num_workers=4)
 
@@ -81,7 +83,7 @@ if __name__ == "__main__":
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     metrics = {"acc": accuracy}
     
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.9)
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.1)
     early_stopper = EarlyStopping(patience=5, min_delta=0.001)
 
     clf = Trainer(model, optimizer, loss_fn, metrics)

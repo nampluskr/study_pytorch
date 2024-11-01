@@ -53,6 +53,7 @@ class CIFAR10(Dataset):
         label = torch.tensor(label).long()
         return image, label
 
+import random
 
 def get_loaders(data_dir, batch_size=64, num_workers=4):
     transform_train = transforms.Compose([
