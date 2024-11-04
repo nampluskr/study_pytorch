@@ -56,6 +56,12 @@ from scipy.special import expit as sigmoid, logsumexp
 def mse_loss(y_pred, y_true):
     return np.mean((y_true - y_pred)**2)
 
+def r2_score(y_pred, y_true):
+    mean_y_true = np.mean(y_true)
+    ss_tot = np.sum((y_true - mean_y_true) ** 2)
+    ss_res = np.sum((y_true - y_pred) ** 2)
+    return 1 - (ss_res / ss_tot)
+
 # numpy
 n_epochs = 10000
 learning_rate = 0.1
