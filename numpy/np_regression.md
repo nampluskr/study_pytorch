@@ -44,7 +44,10 @@ print(f'Test  Accuracy: {acc:.4f}')
 ## Deep Learning: numpy
 
 ```python
-from scipy.special import expit as sigmoid, logsumexp
+#from scipy.special import expit as sigmoid, logsumexp
+
+def sigmoid(x):
+    return 1 / (1 + np.exp(-np.clip(x, -20, 20)))
 
 # def sigmoid(x):
     # return 1 / (1 + np.exp(-x))
