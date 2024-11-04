@@ -48,7 +48,10 @@ from scipy.special import expit as sigmoid, logsumexp
 
 # def sigmoid(x):
     # return 1 / (1 + np.exp(-x))
-    # return np.log1p(np.exp(x)) 
+    # return np.log1p(np.exp(x))
+#     x = np.maximum(-np.max(x), -10) 
+#     # x = np.clip(-np.max(x), -10, None)
+#     return 1 / (1 + np.exp(x))
 
 def mse_loss(y_pred, y_true):
     return np.mean((y_true - y_pred)**2)
