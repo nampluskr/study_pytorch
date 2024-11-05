@@ -1,5 +1,43 @@
 # Regression
 
+## Linear Regression
+
+```python
+# Data
+def create_data(a, b, n_samples):
+    x = np.linspace(0, 10, n_samples)
+    y = a * x + b + np.random.normal(0, 2, n_samples)
+    return x, y
+
+x, y = create_data(a=2, b=1, n_samples=10001)
+
+# x = np.array([1, 2, 3, 4, 5])
+# y = np.array([3, 5, 7, 9, 11])
+
+# Model
+a = 0.01
+b = 0.01
+
+learning_rate = 0.001
+n_epochs = 10000
+
+for epoch in range(1, n_epochs + 1):
+    out = a * x + b
+    loss = np.mean((out - y)**2)
+
+    grad_out = 2 * (out - y) / len(y)
+    grad_a = np.sum(grad_out * x, axis=0)
+    grad_b = np.sum(grad_out, axis=0)
+    
+    a -= learning_rate * grad_a
+    b -= learning_rate * grad_b
+    
+    if epoch % 1000 == 0:
+        print(f'Epoch[{epoch}/{n_epochs}] loss: {loss:.4f} a: {a:.4f} b: {b:.4f}')
+
+print(f'Result: a={a:.2f}, b={b:.2f}')
+```
+
 ## Load Data
 
 ```python
