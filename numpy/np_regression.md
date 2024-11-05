@@ -6,10 +6,10 @@
 # Data
 def create_data(a, b, n_samples):
     x = np.linspace(0, 10, n_samples)
-    y = a * x + b + np.random.normal(0, 2, n_samples)
+    y = a * x + b + np.random.normal(0, 1, n_samples)
     return x, y
 
-x, y = create_data(a=2, b=1, n_samples=10001)
+x, y = create_data(a=2, b=1, n_samples=1001)
 
 # x = np.array([1, 2, 3, 4, 5])
 # y = np.array([3, 5, 7, 9, 11])
