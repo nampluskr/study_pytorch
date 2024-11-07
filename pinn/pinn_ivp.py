@@ -61,17 +61,17 @@ if __name__ == "__main__":
 
 
     # Train
-    # ivp = Trainer(model, optimizer, loss_fn).init()
-    # losses = ivp.fit(t, n_epochs, target=target, scheduler=scheduler)
+    ivp = Trainer(model, optimizer, loss_fn).init()
+    losses = ivp.fit(t, n_epochs, target=target, scheduler=scheduler)
 
-    ivp = BatchTrainer(model, optimizer, loss_fn).init()
-    losses = ivp.fit(t, n_epochs, batch_ratio=0.2, target=target, scheduler=scheduler)
+    # ivp = BatchTrainer(model, optimizer, loss_fn).init()
+    # losses = ivp.fit(t, n_epochs, batch_ratio=0.5, target=target, scheduler=scheduler)
     
     # Results
     # t = np.linspace(-1, 3, 1001)
     fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(10, 4))
     for name in losses:
-        ax1.semilogy(range(1, n_epochs + 1)[::10], losses[name][::10], label=name)
+        ax1.semilogy(range(1, n_epochs + 1)[::20], losses[name][::20], label=name)
     ax1.legend(); ax1.set_xlabel("Epoch"); ax1.set_ylabel("Loss")
 
     ax2.plot(t, solution(t), 'k:', label="Exact")

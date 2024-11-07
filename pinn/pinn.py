@@ -109,11 +109,11 @@ class Trainer:
 
                 desc = f"Epoch[{epoch}/{n_epochs}] "
                 if scheduler is not None:
-                    desc += f"lr: {scheduler.get_last_lr()[0]:.2e} "
+                    desc += f"(lr: {scheduler.get_last_lr()[0]:.2e}) "
                     scheduler.step()
 
                 if epoch % 100 == 0:
-                    desc += ' '.join([f"{name}: {values[-1]:.2e}" for name, values in losses.items()])
+                    desc += ', '.join([f"{name.upper()}: {values[-1]:.2e}" for name, values in losses.items()])
                     pbar.set_description(desc)
         return losses
 
@@ -160,6 +160,6 @@ class BatchTrainer(Trainer):
                     scheduler.step()
 
                 if epoch % 100 == 0:
-                    desc += ' '.join([f"{name}: {values[-1]:.2e}" for name, values in losses.items()])
+                    desc += ', '.join([f"{name.upper()}: {values[-1]:.2e}" for name, values in losses.items()])
                     pbar.set_description(desc)
         return losses
