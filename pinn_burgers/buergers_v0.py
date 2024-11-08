@@ -176,7 +176,7 @@ if __name__ == "__main__":
     X_train_final = torch.vstack((X_train_lhs, X_ic_samples, X_bc_samples))
 
     # EPOCHS = 100000
-    EPOCHS = 100
+    EPOCHS = 10000
     initial_lr = 0.001
     # layers_list = [2, 32, 128, 16, 128, 32, 1]
     layers_list = [2, 50, 50, 1]
