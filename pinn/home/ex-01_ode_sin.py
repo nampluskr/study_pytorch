@@ -70,7 +70,7 @@ if __name__ == '__main__':
     # targets["data"] = t_data, u_data
 
     ivp = Trainer(model, optimizer, loss_functions, targets)
-    losses = ivp.fit(t, n_epochs, scheduler=scheduler)
+    history = ivp.fit(t, n_epochs, scheduler=scheduler)
 
 
     ## Results
@@ -78,9 +78,9 @@ if __name__ == '__main__':
     t_test = torch.from_numpy(t_test_np).float().view(-1, 1).to(device)
 
     fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(10, 4))
-    for name in losses:
-        epochs = range(1, n_epochs + 1)[::10]
-        ax1.semilogy(epochs, losses[name][::10], label=name.upper())
+    for name in history:
+        epochs = range(1, n_epochs + 1)
+        ax1.semilogy(epochs[::10], history[name][::10], label=name.upper())
     ax1.legend()
     ax1.set_xlabel("Epoch")
     ax1.set_ylabel("Loss")

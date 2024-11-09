@@ -55,11 +55,11 @@ class Trainer:
         self.mse = nn.MSELoss()
         # self.device = next(model.parameters()).device
         
-        self.losses = {"total": []}
+        self.history = {"total": []}
         for name in self.loss_functions:
-            self.losses[name] = []
+            self.history[name] = []
         for name in self.targets:
-            self.losses[name] = []
+            self.history[name] = []
 
     def fit(self, inputs, n_epochs, scheduler=None, update_step=10):
         with tqdm(range(1, n_epochs+1), file=sys.stdout, ascii=True, ncols=200) as pbar:
@@ -68,16 +68,16 @@ class Trainer:
 
                 for name in self.loss_functions:
                     loss_value = self.loss_functions[name](self.model, inputs)
-                    self.losses[name].append(loss_value.item())
+                    self.history[name].append(loss_value.item())
                     total_loss += loss_value
 
                 for name in self.targets:
                     target_inputs, target_output = self.targets[name]
                     loss_target = self.mse(self.model(target_inputs), target_output)
-                    self.losses[name].append(loss_target.item())
+                    self.history[name].append(loss_target.item())
                     total_loss += loss_target
 
-                self.losses["total"].append(total_loss.item())
+                self.history["total"].append(total_loss.item())
                 self.optimizer.zero_grad()
                 total_loss.backward()
                 self.optimizer.step()
@@ -88,12 +88,12 @@ class Trainer:
                     scheduler.step()
 
                 if epoch % update_step == 0:
-                    desc += ', '.join([f'{k.upper()}: {v[-1]:.2e}' for k, v in self.losses.items()])
+                    desc += ', '.join([f'{k.upper()}: {v[-1]:.2e}' for k, v in self.history.items()])
                     pbar.set_description(desc)
-        return self.losses
+        return self.history
 
     @torch.no_grad()
     def predict(self, inputs):
         self.model.eval()
         pred = self.model(inputs)
-        return pred.detach().cpu().numpy()
+        return pred.detach().cpu().squeeze().numpy()
