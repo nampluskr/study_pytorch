@@ -36,9 +36,9 @@ def ic_loss(model, t):
     t.requires_grad = True
     output = model(t)
     x, y = output.T       # ndim == 1
-    ic_loss_x = x[0] - 1.0
-    ic_loss_y = y[0] - 0.0
-    return torch.mean((ic_loss_x)**2) + torch.mean((ic_loss_y)**2)
+    ic_x_loss = x[0] - 1.0
+    ic_y_loss = y[0] - 0.0
+    return torch.mean((ic_x_loss)**2) + torch.mean((ic_y_loss)**2)
 
 
 if __name__ == '__main__':
@@ -59,31 +59,30 @@ if __name__ == '__main__':
     t_np = np.linspace(t_min, t_max, t_size)
     t = torch.from_numpy(t_np).float().view(-1, 1).to(device)
 
-    x0 = torch.full_like(t, 1.0)
-    y0 = torch.full_like(t, 0.0)
+   
+    ## Modeling and Training
+    model = PINN(layers_dim=layers, activation="tanh").to(device)
+    optimizer = optim.AdamW(model.parameters(), lr=learning_rate)
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.95)
 
     loss_functions = {}
     loss_functions["res"] = residual_loss
     loss_functions["ic"] = ic_loss
 
     targets = {}
-    
-    ## Trian model
-    model = PINN(layers_dim=layers, activation="tanh").to(device)
-    optimizer = optim.AdamW(model.parameters(), lr=learning_rate)
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.95)
 
     odes = Trainer(model, optimizer, loss_functions, targets)
-    losses = odes.fit(inputs=[t], n_epochs=n_epochs, scheduler=scheduler)
+    losses = odes.fit(t, n_epochs, scheduler=scheduler)
     
     ## Results
     t_test_np = np.linspace(t_min, t_max, 1001)
     t_test = torch.from_numpy(t_test_np).float().view(-1, 1).to(device)
-    pred_x_np, pred_y_np = odes.predict([t_test]).T
+    pred_x_np, pred_y_np = odes.predict(t_test).T
 
     fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(10, 4))
     for name in losses:
-        ax1.semilogy(range(1, n_epochs + 1)[::10], losses[name][::10], label=name.upper())
+        epochs = range(1, n_epochs + 1)[::10]
+        ax1.semilogy(epochs, losses[name][::10], label=name.upper())
     ax1.legend()
     ax1.set_xlabel("Epoch")
     ax1.set_ylabel("Loss")

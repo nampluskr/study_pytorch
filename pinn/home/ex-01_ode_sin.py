@@ -55,21 +55,22 @@ if __name__ == '__main__':
     t_data = torch.from_numpy(t_data_np).float().view(-1, 1).to(device)
     u_data = torch.from_numpy(u_data_np).float().view(-1, 1).to(device)
 
-    loss_functions = {}
-    loss_functions["res"] = residual_loss
-    loss_functions["ic"] = ic_loss
-
-    targets = {}
-    # targets["ic"] = [torch.full_like(t, t_min)], torch.full_like(t, 1)
-    targets["data"] = [t_data], u_data
 
     # Modeling and Training
     model = PINN(layers_dim=layers, activation="tanh").to(device)
     optimizer = optim.AdamW(model.parameters(), lr=learning_rate)
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.95)
 
+    loss_functions = {}
+    loss_functions["res"] = residual_loss
+    loss_functions["ic"] = ic_loss
+
+    targets = {}
+    # targets["ic"] = [torch.full_like(t, t_min)], torch.full_like(t, 1)
+    # targets["data"] = t_data, u_data
+
     ivp = Trainer(model, optimizer, loss_functions, targets)
-    losses = ivp.fit(inputs=[t], n_epochs=n_epochs, scheduler=scheduler)
+    losses = ivp.fit(t, n_epochs, scheduler=scheduler)
 
 
     ## Results
@@ -78,14 +79,15 @@ if __name__ == '__main__':
 
     fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(10, 4))
     for name in losses:
-        ax1.semilogy(range(1, n_epochs + 1)[::10], losses[name][::10], label=name)
+        epochs = range(1, n_epochs + 1)[::10]
+        ax1.semilogy(epochs, losses[name][::10], label=name.upper())
     ax1.legend()
     ax1.set_xlabel("Epoch")
     ax1.set_ylabel("Loss")
 
     ax2.plot(t_test_np, solution(t_test_np), 'k:', label="Exact")
     ax2.plot(t_data_np, solution(t_data_np), 'ko', label="Data")
-    ax2.plot(t_test_np, ivp.predict([t_test]), 'r', label="Prediction")
+    ax2.plot(t_test_np, ivp.predict(t_test), 'r', label="Prediction")
     ax2.legend()
     ax2.set_xlabel("t")
     ax2.set_ylabel("u(t)")

@@ -5,27 +5,44 @@ import torch.nn as nn
 
 
 def gradient(y, x):
+    """ return dy/dx """
     return torch.autograd.grad(y, x, grad_outputs=torch.ones_like(y),
                 create_graph=True, retain_graph=True)[0]
+
+def to_tensor(x):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if x.ndim == 1:
+        return torch.from_numpy(x).float().view(-1, 1).to(device)
+    else:
+        return torch.from_numpy(x).float().to(device)
+
+def tensor_like(x, value):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    return torch.full_like(x, value).to(device)
+
+def to_numpy(x):
+    return x.detach().cpu().squeeze().numpy()
 
 
 class PINN(nn.Module):
     def __init__(self, layers_dim, activation="tanh"):
         super().__init__()
-        functions = {"tanh": nn.Tanh(), "sigmoid": nn.Sigmoid(),
+        self.input_dim = layers_dim[0]
+        activation_functions = {"tanh": nn.Tanh(), "sigmoid": nn.Sigmoid(),
                      "swish": nn.SiLU(), "silu": nn.SiLU(),
                      "elu": nn.ELU(), "gelu": nn.GELU(),
                      "relu": nn.ReLU(), "leakyrelu": nn.LeakyReLU()}
         layers = []
         for i in range(len(layers_dim) - 2):
             layers.append(nn.Linear(layers_dim[i], layers_dim[i+1]))
-            layers.append(functions[activation.lower()])
+            layers.append(activation_functions[activation.lower()])
         layers.append(nn.Linear(layers_dim[-2], layers_dim[-1]))
 
         self.pinn = nn.Sequential(*layers)
 
-    def forward(self, *inputs):
-        inputs = torch.cat(inputs, dim=1)
+    def forward(self, inputs):
+        if self.input_dim > 1:
+            inputs = torch.cat(inputs, dim=1)
         return self.pinn(inputs)
 
 
@@ -37,31 +54,30 @@ class Trainer:
         self.targets = targets
         self.mse = nn.MSELoss()
         # self.device = next(model.parameters()).device
-
-    def fit(self, inputs, n_epochs, scheduler=None):
-        losses = {"total": []}
+        
+        self.losses = {"total": []}
         for name in self.loss_functions:
-            losses[name] = []
+            self.losses[name] = []
         for name in self.targets:
-            losses[name] = []
+            self.losses[name] = []
 
-        with tqdm(range(1, n_epochs+1), file=sys.stdout, ascii=True, ncols=150) as pbar:
+    def fit(self, inputs, n_epochs, scheduler=None, update_step=10):
+        with tqdm(range(1, n_epochs+1), file=sys.stdout, ascii=True, ncols=200) as pbar:
             for epoch in pbar:
                 total_loss = 0
 
                 for name in self.loss_functions:
-                    loss_value = self.loss_functions[name](self.model, *inputs)
-                    losses[name].append(loss_value.item())
+                    loss_value = self.loss_functions[name](self.model, inputs)
+                    self.losses[name].append(loss_value.item())
                     total_loss += loss_value
 
                 for name in self.targets:
                     target_inputs, target_output = self.targets[name]
-                    loss_target = self.mse(self.model(*target_inputs), target_output)
-                    losses[name].append(loss_target.item())
+                    loss_target = self.mse(self.model(target_inputs), target_output)
+                    self.losses[name].append(loss_target.item())
                     total_loss += loss_target
 
-                losses["total"].append(total_loss.item())
-
+                self.losses["total"].append(total_loss.item())
                 self.optimizer.zero_grad()
                 total_loss.backward()
                 self.optimizer.step()
@@ -71,14 +87,13 @@ class Trainer:
                     desc += f"(lr: {scheduler.get_last_lr()[0]:.2e}) "
                     scheduler.step()
 
-                if epoch % 50 == 0:
-                    desc += ' '.join([f'{k.upper()}: {v[-1]:.2e}' for k, v in losses.items()])
+                if epoch % update_step == 0:
+                    desc += ', '.join([f'{k.upper()}: {v[-1]:.2e}' for k, v in self.losses.items()])
                     pbar.set_description(desc)
-
-        return losses
+        return self.losses
 
     @torch.no_grad()
     def predict(self, inputs):
         self.model.eval()
-        pred = self.model(*inputs)
+        pred = self.model(inputs)
         return pred.detach().cpu().numpy()
