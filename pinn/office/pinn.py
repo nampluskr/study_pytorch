@@ -62,6 +62,8 @@ class Trainer:
             self.history[name] = []
         for name in self.targets:
             self.history[name] = []
+            
+        self.loss_weights = {name: 1 for name in self.history}
 
     def fit(self, inputs, n_epochs, scheduler=None, update_step=10):
         with tqdm(range(1, n_epochs+1), file=sys.stdout, ascii=True, ncols=200) as pbar:
@@ -70,12 +72,14 @@ class Trainer:
 
                 for name in self.loss_functions:
                     loss_value = self.loss_functions[name](self.model, inputs)
+                    loss_value *= self.loss_weights[name]
                     self.history[name].append(loss_value.item())
-                    total_loss += loss_value
+                    total_loss += loss_value 
 
                 for name in self.targets:
                     target_inputs, target_output = self.targets[name]
                     loss_target = self.mse(self.model(target_inputs), target_output)
+                    loss_target *= self.loss_weights[name]
                     self.history[name].append(loss_target.item())
                     total_loss += loss_target
 
